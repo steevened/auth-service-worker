@@ -1,0 +1,6 @@
+name = "auth-service"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+[vars]
+DATABASE_URL = "postgresql://neondb_owner:npg_bgSpFAoWJI05@ep-ancient-scene-adamyov2-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
