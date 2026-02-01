@@ -19,3 +19,7 @@ export type RawResponse<
   T = unknown,
   Status extends StatusCode = StatusCode,
 > = TypedResponse<RawResponsePayload<T>, Status, "json">;
+
+export type SessionPayload = {
+  email: string;
+};
