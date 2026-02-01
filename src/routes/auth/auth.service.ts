@@ -3,6 +3,7 @@ import { createDb } from "../../db/client";
 import { users, verificationOtps } from "../../db/schema";
 import { getJWTSession } from "../../session";
 import { generateOtp } from "../../utils";
+import { issueOtp, verifyActiveOtp } from "./auth.domain";
 
 export type RequestOtpResult =
   | { type: "OTP_SENT" }
@@ -12,7 +13,7 @@ export type RequestOtpResult =
 export type ValidateOtpResult =
   | { type: "OTP_INVALID" }
   | { type: "OTP_EXPIRED" }
-  | { type: "OTP_VALID"; token: string };
+  | { type: "OTP_VALID"; data: { token: string } };
 
 export const requestLoginOtp = async ({
   email,
@@ -32,22 +33,12 @@ export const requestLoginOtp = async ({
     return { type: "USER_NOT_FOUND" };
   }
 
-  const [activeOtp] = await db
-    .select()
-    .from(verificationOtps)
-    .where(gt(verificationOtps.expiresAt, new Date()));
+  const activeOtp = await verifyActiveOtp(db, email);
 
   if (activeOtp) {
     return { type: "ACTIVE_OTP_EXISTS" };
   }
-
-  const otp = generateOtp();
-
-  await db.insert(verificationOtps).values({
-    email,
-    otp,
-    expiresAt: new Date(Date.now() + 60 * 5 * 1000),
-  });
+  await issueOtp(db, email);
 
   return { type: "OTP_SENT" };
 };
@@ -65,14 +56,7 @@ export const validateLoginOtp = async ({
 }): Promise<ValidateOtpResult> => {
   const db = createDb(dbUrl);
 
-  const [activeOtp] = await db
-    .select()
-    .from(verificationOtps)
-    .where(
-      and(eq(verificationOtps.otp, otp), eq(verificationOtps.email, email)),
-    )
-    .orderBy(desc(verificationOtps.createdAt))
-    .limit(1);
+  const activeOtp = await verifyActiveOtp(db, email);
 
   if (!activeOtp) {
     return {
@@ -88,6 +72,25 @@ export const validateLoginOtp = async ({
 
   return {
     type: "OTP_VALID",
-    token,
+    data: { token },
   };
+};
+
+export const registerUser = async (email: string, dbUrl: string) => {
+  const db = createDb(dbUrl);
+
+  const [user] = await db
+    .select({ userId: users.id, email: users.email })
+    .from(users)
+    .where(eq(users.email, email));
+
+  if (user) {
+    return { type: "USER_EXISTS" };
+  }
+
+  const [newUser] = await db.insert(users).values({ email }).returning({
+    email: users.email,
+  });
+
+  return { type: "USER_CREATED" };
 };

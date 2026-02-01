@@ -7,8 +7,9 @@ export const requestLoginOtp = async (c: Context): Promise<RawResponse> => {
   const dbUrl = c.env.DATABASE_URL;
   const result = await service.requestLoginOtp({ email, dbUrl });
   switch (result.type) {
-    case "OTP_SENT":
     case "USER_NOT_FOUND":
+      return c.json({ success: false, message: "User not found" }, 400);
+    case "OTP_SENT":
       return c.json({
         success: true,
         message: "OTP has been sent to user if exists",
@@ -21,6 +22,19 @@ export const requestLoginOtp = async (c: Context): Promise<RawResponse> => {
   }
 };
 
-export const validateLoginOtp = async (c: Context): Promise<RawResponse> => {
-  return await service.validateLoginOtp(c);
+export const validateLoginOtp = async (
+  c: Context,
+): Promise<RawResponse<{ token: string }>> => {
+  const { email, otp } = c.req.valid("json" as never);
+  const dbUrl = c.env.DATABASE_URL;
+  const secret = c.env.SECRET;
+  const result = await service.validateLoginOtp({ email, otp, dbUrl, secret });
+  switch (result.type) {
+    case "OTP_INVALID":
+      return c.json({ success: false, message: "Invalid OTP" }, 400);
+    case "OTP_EXPIRED":
+      return c.json({ success: false, message: "OTP has expired" }, 400);
+    case "OTP_VALID":
+      return c.json({ success: true, data: { token: result.data.token } });
+  }
 };

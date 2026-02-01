@@ -1,6 +1,12 @@
+import { NeonQueryFunction } from "@neondatabase/serverless";
+import { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import type { Hono, TypedResponse } from "hono";
 import { BlankSchema } from "hono/types";
 import { StatusCode } from "hono/utils/http-status";
+
+export type AppDB = NeonHttpDatabase<Record<string, never>> & {
+  $client: NeonQueryFunction<false, false>;
+};
 
 export type Env = {
   DATABASE_URL: string;
