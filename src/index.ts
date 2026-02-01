@@ -13,8 +13,6 @@ app.get("/health", (c) => {
   });
 });
 
-
-
 routes(app);
 
 export default app;

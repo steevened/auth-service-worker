@@ -3,19 +3,23 @@ import { Context } from "hono";
 import { z } from "zod";
 import { createDb } from "../../db/client";
 import { users, verificationOtps } from "../../db/schema";
-import {
-  loginRequestOtpSchema,
-  loginVerifyOtpSchema,
-} from "../../routeSchemas/route-schemas";
+import { loginVerifyOtpSchema } from "../../routeSchemas/route-schemas";
 import { getJWTSession } from "../../session";
 import { generateOtp } from "../../utils";
 
-export const requestLoginOtp = async (c: Context) => {
-  const { email } = c.req.valid("json" as never) as z.infer<
-    typeof loginRequestOtpSchema
-  >;
+export type RequestOtpResult =
+  | { type: "OTP_SENT" }
+  | { type: "USER_NOT_FOUND" }
+  | { type: "ACTIVE_OTP_EXISTS" };
 
-  const db = createDb(c.env.DATABASE_URL);
+export const requestLoginOtp = async ({
+  email,
+  dbUrl,
+}: {
+  email: string;
+  dbUrl: string;
+}): Promise<RequestOtpResult> => {
+  const db = createDb(dbUrl);
 
   const [user] = await db
     .select({ userId: users.id, email: users.email })
@@ -23,13 +27,7 @@ export const requestLoginOtp = async (c: Context) => {
     .where(eq(users.email, email));
 
   if (!user) {
-    return c.json(
-      {
-        success: true,
-        message: "OTP has been sent to user if exists",
-      },
-      200,
-    );
+    return { type: "USER_NOT_FOUND" };
   }
 
   const [activeOtp] = await db
@@ -38,13 +36,7 @@ export const requestLoginOtp = async (c: Context) => {
     .where(gt(verificationOtps.expiresAt, new Date()));
 
   if (activeOtp) {
-    return c.json(
-      {
-        success: false,
-        message: "User already has an active OTP",
-      },
-      400,
-    );
+    return { type: "ACTIVE_OTP_EXISTS" };
   }
 
   const otp = generateOtp();
@@ -55,10 +47,7 @@ export const requestLoginOtp = async (c: Context) => {
     expiresAt: new Date(Date.now() + 60 * 5 * 1000),
   });
 
-  return c.json({
-    success: true,
-    message: "OTP has been sent to user if exists",
-  });
+  return { type: "OTP_SENT" };
 };
 
 export const validateLoginOtp = async (c: Context) => {
