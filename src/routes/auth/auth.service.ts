@@ -1,9 +1,6 @@
 import { and, desc, eq, gt } from "drizzle-orm";
-import { Context } from "hono";
-import { z } from "zod";
 import { createDb } from "../../db/client";
 import { users, verificationOtps } from "../../db/schema";
-import { loginVerifyOtpSchema } from "../../routeSchemas/route-schemas";
 import { getJWTSession } from "../../session";
 import { generateOtp } from "../../utils";
 
@@ -11,6 +8,11 @@ export type RequestOtpResult =
   | { type: "OTP_SENT" }
   | { type: "USER_NOT_FOUND" }
   | { type: "ACTIVE_OTP_EXISTS" };
+
+export type ValidateOtpResult =
+  | { type: "OTP_INVALID" }
+  | { type: "OTP_EXPIRED" }
+  | { type: "OTP_VALID"; token: string };
 
 export const requestLoginOtp = async ({
   email,
@@ -50,12 +52,18 @@ export const requestLoginOtp = async ({
   return { type: "OTP_SENT" };
 };
 
-export const validateLoginOtp = async (c: Context) => {
-  const { email, otp } = c.req.valid("json" as never) as z.infer<
-    typeof loginVerifyOtpSchema
-  >;
-
-  const db = createDb(c.env.DATABASE_URL);
+export const validateLoginOtp = async ({
+  email,
+  otp,
+  dbUrl,
+  secret,
+}: {
+  email: string;
+  otp: string;
+  dbUrl: string;
+  secret: string;
+}): Promise<ValidateOtpResult> => {
+  const db = createDb(dbUrl);
 
   const [activeOtp] = await db
     .select()
@@ -67,30 +75,19 @@ export const validateLoginOtp = async (c: Context) => {
     .limit(1);
 
   if (!activeOtp) {
-    return c.json(
-      {
-        success: false,
-        message: "Invalid OTP",
-      },
-      400,
-    );
+    return {
+      type: "OTP_INVALID",
+    };
   } else if (activeOtp.expiresAt < new Date()) {
-    return c.json(
-      {
-        success: false,
-        message: "OTP has expired, please request a new one",
-      },
-      400,
-    );
+    return {
+      type: "OTP_EXPIRED",
+    };
   }
 
-  const token = await getJWTSession({ email }, c.env.SECRET);
+  const token = await getJWTSession({ email }, secret);
 
-  return c.json({
-    success: true,
-    message: "OTP has been verified successfully, proceed to log in",
-    data: {
-      token,
-    },
-  });
+  return {
+    type: "OTP_VALID",
+    token,
+  };
 };
