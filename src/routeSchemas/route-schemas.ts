@@ -1,12 +1,10 @@
-import { createInsertSchema } from "drizzle-zod";
-import { users } from "../db/schema/users";
 import { z } from "zod";
 
-// export const loginSchema = createInsertSchema(users, {
-//     email: z.email(),
-// });
+export const loginRequestOtpSchema = z.object({
+  email: z.email(),
+});
 
-
-export const loginSchema = z.object({
-    email: z.email(),
+export const loginVerifyOtpSchema = z.object({
+  email: z.email(),
+  otp: z.string().length(6),
 });

@@ -4,10 +4,10 @@ import { StatusCode } from "hono/utils/http-status";
 export type RawResponsePayload<T = unknown> = {
   data?: T;
   error?: {
-    origin: string;
+    origin?: string;
     code: string;
-    format: string;
-    pattern: string;
+    format?: string;
+    pattern?: string;
     path: string[];
     message: string;
   }[];
