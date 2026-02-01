@@ -34,3 +34,6 @@ lerna-debug.log*
 
 # wrangler
 wrangler.toml
+
+# drizzle (using push workflow, migrations regenerated from schema)
+drizzle/

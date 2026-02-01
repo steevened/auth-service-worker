@@ -1,20 +1,18 @@
-import { Hono } from 'hono'
-import { createDb } from './db/client';
-
-type Env = {
-  DATABASE_URL: string;
-};
+import { Hono } from "hono";
+import { routes } from "./routes";
+import { Env } from "./types";
 
 const app = new Hono<{
   Bindings: Env;
-}>()
+}>();
 
-app.get('/health', (c) => {
-  const db = createDb(c.env.DATABASE_URL);
-  return c.json({ 
+app.get("/health", (c) => {
+  return c.json({
     success: true,
-    message: 'ok',
-   });
-})
+    message: "ok",
+  });
+});
 
-export default app
+routes(app);
+
+export default app;

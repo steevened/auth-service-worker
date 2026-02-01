@@ -1,4 +1,5 @@
 import { pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -15,3 +16,5 @@ export const users = pgTable("users", {
   deletedAt: timestamp("deleted_at"),
   avatar: text("avatar"),
 });
+
+export const insertUserSchema = createInsertSchema(users)
