@@ -12,3 +12,8 @@ export const loginVerifyOtpSchema = z.object({
 export const registerSchema = z.object({
   email: z.email(),
 });
+
+export const registerVerifyOtpSchema = z.object({
+  email: z.email(),
+  otp: z.string().length(6),
+});

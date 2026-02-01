@@ -5,6 +5,7 @@ import {
   loginRequestOtpSchema,
   loginVerifyOtpSchema,
   registerSchema,
+  registerVerifyOtpSchema,
 } from "../../routeSchemas/route-schemas";
 
 export const authRoutes = new Hono();
@@ -24,4 +25,8 @@ authRoutes.post(
   sValidator("json", registerSchema),
   controller.registerUser,
 );
-
+authRoutes.post(
+  "/register/validate-email",
+  sValidator("json", registerVerifyOtpSchema),
+  controller.validateRegisterOtp,
+);
