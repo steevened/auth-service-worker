@@ -1,9 +1,12 @@
-import { and, desc, eq, gt } from "drizzle-orm";
 import { createDb } from "../../db/client";
-import { users, verificationOtps } from "../../db/schema";
+import { users } from "../../db/schema";
 import { getJWTSession } from "../../session";
-import { generateOtp } from "../../utils";
-import { issueOtp, verifyActiveOtp } from "./auth.domain";
+import {
+  findUserByEmail,
+  issueOtp,
+  userHasActiveOtp,
+  validateOtp,
+} from "./auth.domain";
 
 export type RequestOtpResult =
   | { type: "OTP_SENT" }
@@ -13,6 +16,7 @@ export type RequestOtpResult =
 export type ValidateOtpResult =
   | { type: "OTP_INVALID" }
   | { type: "OTP_EXPIRED" }
+  | { type: "OTP_ACTIVE" }
   | { type: "OTP_VALID"; data: { token: string } };
 
 export const requestLoginOtp = async ({
@@ -24,16 +28,13 @@ export const requestLoginOtp = async ({
 }): Promise<RequestOtpResult> => {
   const db = createDb(dbUrl);
 
-  const [user] = await db
-    .select({ userId: users.id, email: users.email })
-    .from(users)
-    .where(eq(users.email, email));
+  const user = await findUserByEmail(db, email);
 
   if (!user) {
     return { type: "USER_NOT_FOUND" };
   }
 
-  const activeOtp = await verifyActiveOtp(db, email);
+  const activeOtp = await userHasActiveOtp(db, email);
 
   if (activeOtp) {
     return { type: "ACTIVE_OTP_EXISTS" };
@@ -56,13 +57,15 @@ export const validateLoginOtp = async ({
 }): Promise<ValidateOtpResult> => {
   const db = createDb(dbUrl);
 
-  const activeOtp = await verifyActiveOtp(db, email);
+  const validatedOtp = await validateOtp(db, email, otp);
 
-  if (!activeOtp) {
+  if (!validatedOtp) {
     return {
       type: "OTP_INVALID",
     };
-  } else if (activeOtp.expiresAt < new Date()) {
+  }
+
+  if (validatedOtp.expiresAt < new Date()) {
     return {
       type: "OTP_EXPIRED",
     };
@@ -79,10 +82,7 @@ export const validateLoginOtp = async ({
 export const registerUser = async (email: string, dbUrl: string) => {
   const db = createDb(dbUrl);
 
-  const [user] = await db
-    .select({ userId: users.id, email: users.email })
-    .from(users)
-    .where(eq(users.email, email));
+  const user = await findUserByEmail(db, email);
 
   if (user) {
     return { type: "USER_EXISTS" };
@@ -91,6 +91,10 @@ export const registerUser = async (email: string, dbUrl: string) => {
   const [newUser] = await db.insert(users).values({ email }).returning({
     email: users.email,
   });
+
+  if (!newUser) {
+    return { type: "USER_NOT_CREATED" };
+  }
 
   return { type: "USER_CREATED" };
 };

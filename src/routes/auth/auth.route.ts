@@ -4,6 +4,7 @@ import { sValidator } from "@hono/standard-validator";
 import {
   loginRequestOtpSchema,
   loginVerifyOtpSchema,
+  registerSchema,
 } from "../../routeSchemas/route-schemas";
 
 export const authRoutes = new Hono();
@@ -18,3 +19,9 @@ authRoutes.post(
   sValidator("json", loginVerifyOtpSchema),
   controller.validateLoginOtp,
 );
+authRoutes.post(
+  "/register",
+  sValidator("json", registerSchema),
+  controller.registerUser,
+);
+

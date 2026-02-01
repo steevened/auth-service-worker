@@ -1,7 +1,15 @@
 import { and, eq, gt, desc } from "drizzle-orm";
-import { verificationOtps } from "../../db/schema";
+import { users, verificationOtps } from "../../db/schema";
 import { AppDB } from "../../types";
 import { generateOtp } from "../../utils";
+
+export const findUserByEmail = async (db: AppDB, email: string) => {
+  const [user] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.email, email));
+  return user;
+};
 
 export const issueOtp = async (db: AppDB, email: string) => {
   const otp = generateOtp();
@@ -18,7 +26,8 @@ export const issueOtp = async (db: AppDB, email: string) => {
   return result.otp;
 };
 
-export const verifyActiveOtp = async (db: AppDB, email: string) => {
+
+export const userHasActiveOtp = async (db: AppDB, email: string) => {
   const [activeOtp] = await db
     .select()
     .from(verificationOtps)
@@ -29,6 +38,41 @@ export const verifyActiveOtp = async (db: AppDB, email: string) => {
       ),
     )
     .orderBy(desc(verificationOtps.createdAt))
+    .limit(1);
+
+  return activeOtp;
+};
+
+
+
+// export const verifyActiveOtp = async (
+//   db: AppDB,
+//   email: string,
+//   otp: string,
+// ) => {
+//   const [activeOtp] = await db
+//     .select()
+//     .from(verificationOtps)
+//     .where(
+//       and(
+//         gt(verificationOtps.expiresAt, new Date()),
+//         eq(verificationOtps.email, email),
+//         eq(verificationOtps.otp, otp),
+//       ),
+//     )
+//     .orderBy(desc(verificationOtps.createdAt))
+//     .limit(1);
+
+//   return activeOtp;
+// };
+
+export const validateOtp = async (db: AppDB, email: string, otp: string) => {
+  const [activeOtp] = await db
+    .select()
+    .from(verificationOtps)
+    .where(
+      and(eq(verificationOtps.email, email), eq(verificationOtps.otp, otp)),
+    )
     .limit(1);
 
   return activeOtp;
