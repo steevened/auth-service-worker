@@ -1,7 +1,7 @@
 import { NeonQueryFunction } from "@neondatabase/serverless";
 import { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import type { Context, Hono, TypedResponse } from "hono";
-import { BlankSchema } from "hono/types";
+import { Bindings, BlankSchema } from "hono/types";
 import { StatusCode } from "hono/utils/http-status";
 
 export type AppDB = NeonHttpDatabase<Record<string, never>> & {
@@ -13,13 +13,7 @@ export type Env = {
   SECRET: string;
 };
 
-export type HonoApp = Hono<
-  {
-    Bindings: Env;
-  },
-  BlankSchema,
-  "/"
->;
+export type HonoApp = Hono<AppBindings, BlankSchema, "/">;
 
 export type RawResponsePayload<T = unknown> = {
   data?: T;

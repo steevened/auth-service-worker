@@ -4,5 +4,5 @@ import { invitationsRoutes } from "./invitations/invitations.route";
 
 export const routes = (app: HonoApp) => {
   app.route("/auth", authRoutes);
-  app.route("/invitations", invitationsRoutes);
+  app.route("/api/invitations", invitationsRoutes);
 };
