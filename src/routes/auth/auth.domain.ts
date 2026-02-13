@@ -1,4 +1,4 @@
-import { and, eq, gt, desc } from "drizzle-orm";
+import { and, desc, eq, gt } from "drizzle-orm";
 import { users, verificationOtps } from "../../db/schema";
 import { AppDB } from "../../types";
 import { generateOtp } from "../../utils";
@@ -26,7 +26,6 @@ export const issueOtp = async (db: AppDB, email: string) => {
   return result.otp;
 };
 
-
 export const userHasActiveOtp = async (db: AppDB, email: string) => {
   const [activeOtp] = await db
     .select()
@@ -42,29 +41,6 @@ export const userHasActiveOtp = async (db: AppDB, email: string) => {
 
   return activeOtp;
 };
-
-
-
-// export const verifyActiveOtp = async (
-//   db: AppDB,
-//   email: string,
-//   otp: string,
-// ) => {
-//   const [activeOtp] = await db
-//     .select()
-//     .from(verificationOtps)
-//     .where(
-//       and(
-//         gt(verificationOtps.expiresAt, new Date()),
-//         eq(verificationOtps.email, email),
-//         eq(verificationOtps.otp, otp),
-//       ),
-//     )
-//     .orderBy(desc(verificationOtps.createdAt))
-//     .limit(1);
-
-//   return activeOtp;
-// };
 
 export const validateOtp = async (db: AppDB, email: string, otp: string) => {
   const [activeOtp] = await db

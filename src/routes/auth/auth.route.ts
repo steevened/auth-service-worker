@@ -1,32 +1,32 @@
+import { sValidator } from "@hono/standard-validator";
 import { Hono } from "hono";
 import * as controller from "./auth.controller";
-import { sValidator } from "@hono/standard-validator";
 import {
-  loginRequestOtpSchema,
-  loginVerifyOtpSchema,
-  registerSchema,
-  registerVerifyOtpSchema,
-} from "../../routeSchemas/route-schemas";
+  loginRequestOtpValidator,
+  loginVerifyOtpValidator,
+  registerValidator,
+  registerVerifyOtpValidator,
+} from "./auth.validators";
 
 export const authRoutes = new Hono();
 
 authRoutes.post(
   "/login/request-otp",
-  sValidator("json", loginRequestOtpSchema),
+  sValidator("json", loginRequestOtpValidator),
   controller.requestLoginOtp,
 );
 authRoutes.post(
   "/login/verify-otp",
-  sValidator("json", loginVerifyOtpSchema),
+  sValidator("json", loginVerifyOtpValidator),
   controller.validateLoginOtp,
 );
 authRoutes.post(
   "/register",
-  sValidator("json", registerSchema),
+  sValidator("json", registerValidator),
   controller.registerUser,
 );
 authRoutes.post(
   "/register/validate-email",
-  sValidator("json", registerVerifyOtpSchema),
+  sValidator("json", registerVerifyOtpValidator),
   controller.validateRegisterOtp,
 );
