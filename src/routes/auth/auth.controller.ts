@@ -9,6 +9,8 @@ export const requestLoginOtp = async (c: Context): Promise<RawResponse> => {
   switch (result.type) {
     case "USER_NOT_FOUND":
       return c.json({ success: false, message: "User not found" }, 400);
+    case "ACCOUNT_NOT_VERIFIED":
+      return c.json({ success: false, message: "Account not verified" }, 400);
     case "OTP_SENT":
       return c.json({
         success: true,
@@ -34,6 +36,8 @@ export const validateLoginOtp = async (
       return c.json({ success: false, message: "Invalid OTP" }, 400);
     case "OTP_EXPIRED":
       return c.json({ success: false, message: "OTP has expired" }, 400);
+    case "OTP_NOT_VALIDATED":
+      return c.json({ success: false, message: "OTP not validated" }, 400);
     case "OTP_ACTIVE":
       return c.json(
         { success: false, message: "User already has an active OTP" },
@@ -51,6 +55,13 @@ export const registerUser = async (c: Context): Promise<RawResponse> => {
   switch (result.type) {
     case "USER_EXISTS":
       return c.json({ success: false, message: "User already exists" }, 400);
+    case "ACTIVE_OTP_EXISTS":
+      return c.json(
+        { success: false, message: "User already has an active OTP" },
+        400,
+      );
+    case "OTP_SENT":
+      return c.json({ success: true, message: "OTP has been sent to user" });
     case "USER_CREATED":
       return c.json({ success: true, message: "User created successfully" });
     case "USER_NOT_CREATED":
@@ -76,6 +87,8 @@ export const validateRegisterOtp = async (
       return c.json({ success: false, message: "Invalid OTP" }, 400);
     case "OTP_EXPIRED":
       return c.json({ success: false, message: "OTP has expired" }, 400);
+    case "OTP_NOT_VALIDATED":
+      return c.json({ success: false, message: "OTP not validated" }, 400);
     case "OTP_ACTIVE":
       return c.json(
         { success: false, message: "User already has an active OTP" },

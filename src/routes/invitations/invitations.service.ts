@@ -1,5 +1,6 @@
 import { createDb } from "../../db/client";
 import { invitations, users } from "../../db/schema";
+import { getJWTSession } from "../../session";
 import { RequestPayload } from "../../types";
 import { findUserByEmail } from "../users/users.domain";
 import { SendInvitationInput } from "./invitations.validators";
@@ -17,6 +18,7 @@ export const sendInvitation = async (
   payload: RequestPayload,
   data: SendInvitationInput,
   dbUrl: string,
+  secret: string,
 ): Promise<SendInvitationResult> => {
   const db = createDb(dbUrl);
 
@@ -51,12 +53,14 @@ export const sendInvitation = async (
     .limit(1);
 
   if (invitationExists.length > 0) {
-    return { type: "INVITATION_EXISTS" };
+    return { type: "INVITATION_EXISTS" };  
   }
+
+  const token  = await  getJWTSession({ email: data.email }, secret)
 
   const [invitation] = await db
     .insert(invitations)
-    .values({ email: data.email, role: data.role, invitedBy: session.id })
+    .values({ email: data.email, role: data.role, invitedBy: session.id, token })
     .returning({
       email: invitations.email,
     });
@@ -67,3 +71,5 @@ export const sendInvitation = async (
 
   return { type: "INVITATION_SENT" };
 };
+
+

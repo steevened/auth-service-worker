@@ -1,24 +1,22 @@
 import { eq } from "drizzle-orm";
 import { createDb } from "../../db/client";
-import { users } from "../../db/schema";
+import { users, verificationOtps } from "../../db/schema";
 import { getJWTSession } from "../../session";
-import {
-  issueOtp,
-  userHasActiveOtp,
-  validateOtp,
-} from "./auth.domain";
+import { issueOtp, userHasActiveOtp, validateOtp } from "./auth.domain";
 
 import { findUserByEmail } from "../users/users.domain";
 
 export type RequestOtpResult =
   | { type: "OTP_SENT" }
   | { type: "USER_NOT_FOUND" }
-  | { type: "ACTIVE_OTP_EXISTS" };
+  | { type: "ACTIVE_OTP_EXISTS" }
+  | { type: "ACCOUNT_NOT_VERIFIED" };
 
 export type ValidateOtpResult =
   | { type: "OTP_INVALID" }
   | { type: "OTP_EXPIRED" }
   | { type: "OTP_ACTIVE" }
+  | { type: "OTP_NOT_VALIDATED" }
   | { type: "OTP_VALID"; data: { token: string } };
 
 export const requestLoginOtp = async ({
@@ -34,6 +32,10 @@ export const requestLoginOtp = async ({
 
   if (!user) {
     return { type: "USER_NOT_FOUND" };
+  }
+
+  if (!user.emailVerified) {
+    return { type: "ACCOUNT_NOT_VERIFIED" };
   }
 
   const activeOtp = await userHasActiveOtp(db, email);
@@ -87,6 +89,15 @@ export const registerUser = async (email: string, dbUrl: string) => {
   const user = await findUserByEmail(db, email);
 
   if (user) {
+    if (!user.emailVerified) {
+      const activeOtp = await userHasActiveOtp(db, email);
+      if (activeOtp) {
+        return { type: "ACTIVE_OTP_EXISTS" };
+      }
+      await issueOtp(db, email);
+      return { type: "OTP_SENT" };
+    }
+
     return { type: "USER_EXISTS" };
   }
 
@@ -130,10 +141,17 @@ export const validateRegisterOtp = async ({
     };
   }
 
-  await db
+  const [validatedUser] = await db
     .update(users)
     .set({ emailVerified: new Date() })
-    .where(eq(users.email, email));
+    .where(eq(users.email, email))
+    .returning({
+      email: users.email,
+    });
+
+  if (!validatedUser) {
+    return { type: "OTP_NOT_VALIDATED" };
+  }
 
   const token = await getJWTSession({ email }, secret);
 

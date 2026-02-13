@@ -13,7 +13,8 @@ export const sendInvitation: AppHandler<SendInvitationInput> = async (
   const payload = c.get("jwtPayload") as RequestPayload;
   const { email, role } = c.req.valid("json");
   const dbUrl = c.env.DATABASE_URL;
-  const result = await service.sendInvitation(payload, { email, role }, dbUrl);
+  const secret = c.env.SECRET;
+  const result = await service.sendInvitation(payload, { email, role }, dbUrl, secret);
   switch (result.type) {
     case "UNAUTHORIZED":
       return c.json({ success: false, message: "Unauthorized" }, 401);
