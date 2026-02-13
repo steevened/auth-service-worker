@@ -35,7 +35,12 @@ export const requestLoginOtp = async ({
   }
 
   if (!user.emailVerified) {
-    return { type: "ACCOUNT_NOT_VERIFIED" };
+    const activeOtp = await userHasActiveOtp(db, email);
+    if (activeOtp) {
+      return { type: "ACTIVE_OTP_EXISTS" };
+    }
+    await issueOtp(db, email);
+    return { type: "OTP_SENT" };
   }
 
   const activeOtp = await userHasActiveOtp(db, email);
