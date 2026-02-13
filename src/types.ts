@@ -54,3 +54,7 @@ export type AppContext<T = unknown> = Context<
 export type AppHandler<T = unknown> = (
   c: AppContext<T>,
 ) => Response | TypedResponse<any> | Promise<Response | TypedResponse<any>>;
+
+export type RequestPayload = {
+  sub: string;
+};

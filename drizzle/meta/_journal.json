@@ -15,6 +15,20 @@
       "when": 1771007950486,
       "tag": "0001_high_loa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771017084307,
+      "tag": "0002_rich_blonde_phantom",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1771018365972,
+      "tag": "0003_lovely_lethal_legion",
+      "breakpoints": true
     }
   ]
 }

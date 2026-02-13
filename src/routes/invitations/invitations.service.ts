@@ -1,23 +1,44 @@
 import { createDb } from "../../db/client";
-import { invitations } from "../../db/schema";
+import { invitations, users } from "../../db/schema";
+import { RequestPayload } from "../../types";
 import { findUserByEmail } from "../users/users.domain";
 import { SendInvitationInput } from "./invitations.validators";
 import { eq } from "drizzle-orm";
 
 export type SendInvitationResult =
   | { type: "USER_EXISTS" }
-  | { type: "INVITATION_SENT" } 
+  | { type: "INVITATION_SENT" }
   | { type: "INVITATION_NOT_SENT" }
-  | { type: "INVITATION_EXISTS" };
+  | { type: "INVITATION_EXISTS" }
+  | { type: "UNAUTHORIZED" }
+  | { type: "FORBIDDEN" };
 
 export const sendInvitation = async (
+  payload: RequestPayload,
   data: SendInvitationInput,
   dbUrl: string,
 ): Promise<SendInvitationResult> => {
   const db = createDb(dbUrl);
 
-  const user = await findUserByEmail(db, data.email);
+  const [session] = await db
+    .select({
+      email: users.email,
+      id: users.id,
+    })
+    .from(users)
+    .where(eq(users.email, payload.sub))
 
+
+  if (!session) {
+    return { type: "UNAUTHORIZED" };
+  }
+
+  if (session.email === data.email) {
+    return { type: "FORBIDDEN" };
+  }
+
+
+  const user = await findUserByEmail(db, data.email);
 
   if (user) {
     return { type: "USER_EXISTS" };
@@ -35,7 +56,7 @@ export const sendInvitation = async (
 
   const [invitation] = await db
     .insert(invitations)
-    .values({ email: data.email, role: data.role })
+    .values({ email: data.email, role: data.role, invitedBy: session.id })
     .returning({
       email: invitations.email,
     });
