@@ -8,7 +8,6 @@ const app = new Hono<AppBindings>();
 app.use("/api/*", (c, next) => {
   const jwtMiddleware = jwt({
     secret: c.env.SECRET,
-    alg: "HS256",
   });
   return jwtMiddleware(c, next);
 });

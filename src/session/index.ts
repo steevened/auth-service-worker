@@ -5,12 +5,13 @@ export async function getJWTSession(
   payload: SessionPayload,
   secretKey: string,
 ) {
-  const sessionDuration = 7 * 24 * 60 * 60 * 1000;
+  const sessionDurationInSeconds = 7 * 24 * 60 * 60
+  const expirationTime = Math.floor(Date.now() / 1000) + sessionDurationInSeconds
 
   const token = await sign(
     {
       sub: payload.email,
-      exp: sessionDuration,
+      exp: expirationTime,
     },
     secretKey,
   );

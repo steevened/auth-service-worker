@@ -11,6 +11,11 @@ export const sendInvitation: AppHandler<SendInvitationInput> = async (
   switch (result.type) {
     case "USER_EXISTS":
       return c.json({ success: false, message: "User already exists" }, 400);
+    case "INVITATION_EXISTS":
+      return c.json(
+        { success: false, message: "Invitation already exists" },
+        400,
+      );
     case "INVITATION_SENT":
       return c.json({ success: true, message: "Invitation sent successfully" });
     case "INVITATION_NOT_SENT":
