@@ -3,11 +3,12 @@ import { createDb } from "../../db/client";
 import { users } from "../../db/schema";
 import { getJWTSession } from "../../session";
 import {
-  findUserByEmail,
   issueOtp,
   userHasActiveOtp,
   validateOtp,
 } from "./auth.domain";
+
+import { findUserByEmail } from "../users/users.domain";
 
 export type RequestOtpResult =
   | { type: "OTP_SENT" }
